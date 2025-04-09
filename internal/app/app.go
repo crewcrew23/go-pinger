@@ -40,7 +40,7 @@ func (p *pinger) SendPing(target string, retry int) {
 
 	minTime, maxTime := p.calcMinAndMaxTime()
 
-	fmt.Printf("--- %s ping statistics ---\n", target)
+	fmt.Printf("\n--- %s ping statistics ---\n", target)
 	fmt.Printf("%d packets transmitted, %d received, %.2f%% packet loss\n",
 		p.retry,
 		p.countSuccessReply,
