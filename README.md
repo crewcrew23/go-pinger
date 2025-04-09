@@ -35,5 +35,8 @@ rtt min/avg/max = 20.30/26.52/43.49 ms
 ```
 
 # Installation
-```git clone https://github.com/crewcrew23/go-pinger.git```
-cd 
+```git clone https://github.com/crewcrew23/go-pinger.git``` <br>
+```cd go-pinger``` <br>
+```make``` or ``` go build ./cmd/pinger ``` <br>
+
+After just  run pinger))
