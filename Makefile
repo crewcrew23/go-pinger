@@ -4,7 +4,6 @@ BINARY_NAME := pinger
 BIN_DIR := ./bin
 MAIN_PKG := ./cmd/pinger/
 
-# Определяем текущую платформу
 ifeq ($(OS),Windows_NT)
     CURRENT_OS := windows
     BINARY_EXT := .exe
