@@ -1,4 +1,4 @@
-package app
+package pinger
 
 import (
 	"fmt"
@@ -12,52 +12,19 @@ import (
 	"time"
 )
 
-type pinger struct {
+type Ping struct {
 	conn              *icmp.PacketConn
+	addr              string
 	retry             int
 	countSuccessReply int
 	rttList           []time.Duration
 }
 
-func New() *pinger {
-	conn, err := icmp.ListenPacket("ip4:icmp", "0.0.0.0")
-	errs.HandleFatal(err, "Error of creating connection")
-
-	return &pinger{conn: conn}
-}
-
-func (p *pinger) SendPing(target string, retry int) {
-	p.initInternalData(retry)
-
-	if retry <= 0 {
-		retry = 4
-	}
-
-	for i := retry; i > 0; i-- {
-		p.send(target)
-		time.Sleep(500 * time.Millisecond)
-	}
-
-	minTime, maxTime := p.calcMinAndMaxTime()
-
-	fmt.Printf("\n--- %s ping statistics ---\n", target)
-	fmt.Printf("%d packets transmitted, %d received, %.2f%% packet loss\n",
-		p.retry,
-		p.countSuccessReply,
-		p.calcPacketLost(),
-	)
-	fmt.Printf("rtt min/avg/max = %.2f/%.2f/%.2f ms\n",
-		float64(minTime.Microseconds())/1000,
-		float64(p.calcAvgTime().Microseconds())/1000,
-		float64(maxTime.Microseconds())/1000,
-	)
-}
-
-func (p *pinger) send(target string) {
+func (p *Ping) send() {
 	start := time.Now()
 	bytes := p.prepareMessage()
 
-	addr := p.ipAddress(target)
+	addr := p.ipAddress()
 	_, err := p.conn.WriteTo(bytes, &net.IPAddr{IP: addr})
 	errs.HandleFatal(err, "Error sending packet")
 
@@ -78,7 +45,7 @@ func (p *pinger) send(target string) {
 	}
 }
 
-func (p *pinger) prepareMessage() []byte {
+func (p *Ping) prepareMessage() []byte {
 	message := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
 		Code: 0,
@@ -91,7 +58,7 @@ func (p *pinger) prepareMessage() []byte {
 	return bytes
 }
 
-func (p *pinger) reply() (int, []byte, net.Addr) {
+func (p *Ping) reply() (int, []byte, net.Addr) {
 	reply := make([]byte, _const.MTUDefaultSize)
 	err := p.conn.SetReadDeadline(time.Now().Add(3 * time.Second))
 	if err != nil {
@@ -106,17 +73,17 @@ func (p *pinger) reply() (int, []byte, net.Addr) {
 
 }
 
-func (p *pinger) ipAddress(target string) net.IP {
-	ip := net.ParseIP(target)
+func (p *Ping) ipAddress() net.IP {
+	ip := net.ParseIP(p.addr)
 	if ip != nil {
 		return ip
 	} else {
-		ipAddr := p.dnsLookUp(target)
+		ipAddr := dnsLookUp(p.addr)
 		return ipAddr
 	}
 }
 
-func (p *pinger) dnsLookUp(target string) net.IP {
+func dnsLookUp(target string) net.IP {
 	ips, err := net.LookupIP(target)
 	if err != nil || len(ips) == 0 {
 		log.Fatalf("DNS lookup failed for %s: %v", target, err)
@@ -132,7 +99,7 @@ func (p *pinger) dnsLookUp(target string) net.IP {
 	return nil
 }
 
-func (p *pinger) initInternalData(retry int) {
+func (p *Ping) initInternalData(retry int) {
 	if retry <= 0 {
 		p.retry = 4
 	} else {
@@ -140,9 +107,9 @@ func (p *pinger) initInternalData(retry int) {
 	}
 	p.countSuccessReply = _const.DefaultSuccessReply
 
-	p.rttList = make([]time.Duration, retry)
+	p.rttList = []time.Duration{}
 }
 
-func (p *pinger) Close() error {
+func (p *Ping) Close() error {
 	return p.conn.Close()
 }
