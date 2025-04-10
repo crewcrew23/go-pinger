@@ -20,11 +20,9 @@ func New() *pinger {
 	}
 }
 
+// SendPing Send ping to target n times: where n = retry (default 4)
 func (p *pinger) SendPing(target string, retry int) {
-	pp := p.preparePing(target, retry)
-	p.ping = append(p.ping, pp)
-	p.ping[0].initInternalData(retry)
-
+	p.singlePingInit(target, retry)
 	if retry <= 0 {
 		retry = _const.DefaultRetryCount
 	}
@@ -37,6 +35,7 @@ func (p *pinger) SendPing(target string, retry int) {
 	p.ping[0].showInfo()
 }
 
+// preparePing preparing ping, create connect and set retries
 func (p *pinger) preparePing(addr string, retry int) *Ping {
 
 	conn, err := icmp.ListenPacket("ip4:icmp", "0.0.0.0")
@@ -53,10 +52,11 @@ func (p *pinger) preparePing(addr string, retry int) *Ping {
 		addr:  addr,
 		retry: r,
 	}
-	pp.initInternalData(p.globalRetry)
+	pp.initInternalData(r)
 	return pp
 }
 
+// SendFewPings send n ping`s to target addr
 func (p *pinger) SendFewPings(addrs []string, retry int) {
 	if retry <= 0 {
 		p.globalRetry = _const.DefaultRetryCount
@@ -64,6 +64,13 @@ func (p *pinger) SendFewPings(addrs []string, retry int) {
 
 	var wg sync.WaitGroup
 
+	p.sendMultiplyPing(addrs, retry, wg)
+
+	p.showAllInfo()
+}
+
+// sendMultiplyPing run goroutines for everyone target addr
+func (p *pinger) sendMultiplyPing(addrs []string, retry int, wg sync.WaitGroup) {
 	for _, addr := range addrs {
 		pp := p.preparePing(addr, retry)
 		p.ping = append(p.ping, pp)
@@ -77,11 +84,17 @@ func (p *pinger) SendFewPings(addrs []string, retry int) {
 			}
 		}(pp)
 	}
-
 	wg.Wait()
-	p.showAllInfo()
 }
 
+// singlePingInit init  ping state from single target
+func (p *pinger) singlePingInit(target string, retry int) {
+	pp := p.preparePing(target, retry)
+	p.ping = append(p.ping, pp)
+	p.ping[0].initInternalData(retry)
+}
+
+// showAllInfo output info about ping
 func (p *pinger) showAllInfo() {
 	for _, p := range p.ping {
 		p.showInfo()

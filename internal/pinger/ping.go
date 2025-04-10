@@ -20,6 +20,7 @@ type Ping struct {
 	rttList           []time.Duration
 }
 
+// send send ping
 func (p *Ping) send() {
 	start := time.Now()
 	bytes := p.prepareMessage()
@@ -45,6 +46,7 @@ func (p *Ping) send() {
 	}
 }
 
+// prepareMessage preparing message for ping
 func (p *Ping) prepareMessage() []byte {
 	message := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
@@ -58,6 +60,7 @@ func (p *Ping) prepareMessage() []byte {
 	return bytes
 }
 
+// reply get reply from target addr
 func (p *Ping) reply() (int, []byte, net.Addr) {
 	reply := make([]byte, _const.MTUDefaultSize)
 	err := p.conn.SetReadDeadline(time.Now().Add(3 * time.Second))
@@ -73,6 +76,7 @@ func (p *Ping) reply() (int, []byte, net.Addr) {
 
 }
 
+// ipAddress check if input is ip addr return ip else exec dnsLookUp and return first ip
 func (p *Ping) ipAddress() net.IP {
 	ip := net.ParseIP(p.addr)
 	if ip != nil {
@@ -83,6 +87,7 @@ func (p *Ping) ipAddress() net.IP {
 	}
 }
 
+// dnsLookUp search ip V4 by domain
 func dnsLookUp(target string) net.IP {
 	ips, err := net.LookupIP(target)
 	if err != nil || len(ips) == 0 {
@@ -99,6 +104,7 @@ func dnsLookUp(target string) net.IP {
 	return nil
 }
 
+// initInternalData set internal retries and init rtt slice
 func (p *Ping) initInternalData(retry int) {
 	if retry <= 0 {
 		p.retry = 4
