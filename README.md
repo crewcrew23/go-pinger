@@ -83,6 +83,9 @@ Received reply from 54.239.28.85 in 126.503ms
 ```
 
 # Installation
+### dependency
+- Go - https://go.dev/doc/install
+- Make - preferably, it's more convenient with it, but not necessary, you can assemble it yourself with ```go build```
 ```
 git clone https://github.com/crewcrew23/go-pinger.git
 cd go-pinger
