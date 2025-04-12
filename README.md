@@ -89,7 +89,6 @@ Received reply from 54.239.28.85 in 126.503ms
 ```
 git clone https://github.com/crewcrew23/go-pinger.git
 cd go-pinger
-mkdir bin
 make
 cd bin
 sudo ./pinger -t <target> 
